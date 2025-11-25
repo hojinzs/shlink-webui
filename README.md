@@ -1,135 +1,103 @@
-# Turborepo starter
+# Shlink Web UI
 
-This Turborepo starter is maintained by the Turborepo core team.
+A modern, self-hosted URL shortener web application built on top of [Shlink](https://shlink.io/). This project aims to provide a superior user experience with enhanced authentication and a sleek UI.
 
-## Using this example
+## Project Goals
 
-Run the following command:
+- **Self-Hosted Solution**: Develop a fully self-hosted URL shortening application using Shlink as the backend.
+- **Enhanced Authentication**: Add robust authentication features missing in the original `shlink-web-client`.
+- **Modern UI/UX**: Utilize **Shadcn UI** to create a contemporary, responsive, and user-friendly interface.
+- **Full Feature Parity**: Implement all existing functionalities of the `shlink-web-client`.
+- **Advanced Access Control** (Future Goal): Implement account, team, and project-based permission systems.
 
-```sh
-npx create-turbo@latest
-```
+## Target Audience
 
-## What's inside?
+- **Individuals & SOHO**: Freelancers, solopreneurs, and small home office businesses.
+- **Small Teams & Marketing Firms**: Agile marketing teams and agencies requiring branded link management.
+
+## Tech Stack
+
+- **Frontend Framework**: [Next.js](https://nextjs.org/)
+- **Monorepo Tooling**: [Turborepo](https://turbo.build/repo)
+- **UI Library**: [Shadcn UI](https://ui.shadcn.com/), [Tailwind CSS](https://tailwindcss.com/)
+- **Backend Engine**: [Shlink](https://shlink.io/)
+- **Authentication**: [Authentik](https://goauthentik.io/) (OIDC/OAuth2)
+- **Infrastructure**: Docker, PostgreSQL, Redis
+
+## Project Structure
 
 This Turborepo includes the following packages/apps:
 
-### Apps and Packages
+### Apps
+- `apps/web`: The main Next.js web application.
+- `apps/docs`: Documentation site (Next.js).
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Packages
+- `packages/ui`: Shared React component library.
+- `packages/eslint-config`: Shared ESLint configurations.
+- `packages/typescript-config`: Shared TypeScript configurations.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Development Setup
 
-### Utilities
+### 1. Start Infrastructure
+Start the required services (Authentik, Shlink, PostgreSQL, Redis) using Docker Compose:
 
-This Turborepo has some additional tools already setup for you:
+```bash
+docker-compose -f docker-compose.development.yaml up -d
+```
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### 2. Configure Authentik
+1.  Access Authentik at [http://localhost:9000/if/flow/initial-setup/](http://localhost:9000/if/flow/initial-setup/) and set up the admin account (`akadmin`).
+2.  **Create a Provider**:
+    *   Go to **Applications** -> **Providers**.
+    *   Create a new **OAuth2/OpenID Provider**.
+    *   **Name**: Shlink Provider
+    *   **Client Type**: Confidential
+    *   **Redirect URIs**: `http://localhost:3000/api/auth/callback/authentik`
+    *   **Signing Key**: Select the default certificate.
+    *   Save and copy the **Client ID** and **Client Secret**.
+3.  **Create an Application**:
+    *   Go to **Applications** -> **Applications**.
+    *   Create a new Application.
+    *   **Name**: Shlink
+    *   **Slug**: `shlink`
+    *   **Provider**: Select "Shlink Provider".
+    *   **Launch URL**: `http://localhost:3000`
+    *   Save.
 
-### Build
+### 3. Configure Shlink
+Generate an API key for Shlink:
+
+```bash
+# Replace <shlink-container-name> with the actual container name (e.g., shlink-webui-shlink-1)
+docker exec -it shlink-webui-shlink-1 shlink api-key:generate
+```
+
+Copy the generated API key.
+
+### 4. Configure Web App
+1.  Rename `apps/web/env.local` to `apps/web/.env.local`.
+2.  Update `apps/web/.env.local` with the values from Authentik and Shlink:
+
+```env
+AUTHENTIK_ISSUER=http://localhost:9000/application/o/shlink/
+AUTHENTIK_CLIENT_ID=<your-client-id>
+AUTHENTIK_CLIENT_SECRET=<your-client-secret>
+SHLINK_URL=http://localhost:8080
+SHLINK_API_KEY=<your-shlink-api-key>
+NEXTAUTH_SECRET=<random-string> # Generate with: openssl rand -base64 32
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### 5. Start Development Server
+```bash
+pnpm dev
+```
+
+## Build
 
 To build all apps and packages, run the following command:
 
+```bash
+pnpm build
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)

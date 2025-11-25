@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "shlink-webui",
   "private": true,
   "scripts": {
     "build": "turbo run build",

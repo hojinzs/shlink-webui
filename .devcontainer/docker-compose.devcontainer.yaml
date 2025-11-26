@@ -3,6 +3,15 @@ services:
     image: mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye
     volumes:
       - ..:/workspace:cached
+    working_dir: /workspace
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - postgresql
+      - redis
+      - shlink
     
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity

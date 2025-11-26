@@ -13,8 +13,58 @@
 				"esbenp.prettier-vscode",
 				"bradlc.vscode-tailwindcss"
 			]
+		},
+		"coder": {
+			"apps": [
+				{
+					"slug": "vscode",
+					"displayName": "Visual Studio Code",
+					"url": "vscode://coder.coder-remote/openDevContainer?owner=${localEnv:CODER_WORKSPACE_OWNER_NAME}&workspace=${localEnv:CODER_WORKSPACE_NAME}&agent=${localEnv:CODER_WORKSPACE_PARENT_AGENT_NAME}&url=${localEnv:CODER_URL}&token=$SESSION_TOKEN&devContainerName=${localEnv:CONTAINER_ID}&devContainerFolder=${containerWorkspaceFolder}&localWorkspaceFolder=${localWorkspaceFolder}",
+					"external": true,
+					"icon": "/icon/code.svg",
+					"order": 1
+				},
+				{
+					"slug": "antigravity",
+					"displayName": "Antigravity",
+					"url": "antigravity://coder.coder-remote/openDevContainer?owner=${localEnv:CODER_WORKSPACE_OWNER_NAME}&workspace=${localEnv:CODER_WORKSPACE_NAME}&agent=${localEnv:CODER_WORKSPACE_PARENT_AGENT_NAME}&url=${localEnv:CODER_URL}&token=$SESSION_TOKEN&devContainerName=${localEnv:CONTAINER_ID}&devContainerFolder=${containerWorkspaceFolder}&localWorkspaceFolder=${localWorkspaceFolder}",
+					"external": true,
+					"icon": "/icon/windsurf.svg",
+					"order": 2
+				},
+				{
+					"slug": "code-server",
+					"displayName": "code-server",
+					"url": "https://${localEnv:FEATURE_CODE_SERVER_OPTION_HOST:127.0.0.1}:${localEnv:FEATURE_CODE_SERVER_OPTION_PORT:8080}/?folder=${containerWorkspaceFolder}",
+					"openIn": "${localEnv:FEATURE_CODE_SERVER_OPTION_APPOPENIN:slim-window}",
+					"share": "${localEnv:FEATURE_CODE_SERVER_OPTION_APPSHARE:owner}",
+					"icon": "/icon/code.svg",
+					"group": "${localEnv:FEATURE_CODE_SERVER_OPTION_APPGROUP:Web Editors}",
+					"order": 1,
+					"healthCheck": {
+						"url": "https://${localEnv:FEATURE_CODE_SERVER_OPTION_HOST:127.0.0.1}:${localEnv:FEATURE_CODE_SERVER_OPTION_PORT:8080}/healthz",
+						"interval": 5,
+						"threshold": 2
+					}
+				}
+			]
 		}
 	},
-    "postCreateCommand": "pnpm install",
-    "remoteUser": "node"
+	"forwardPorts": [3000, 9000, 8080],
+	"portsAttributes": {
+		"3000": {
+			"label": "Next.js Dev Server",
+			"onAutoForward": "notify"
+		},
+		"9000": {
+			"label": "Authentik",
+			"onAutoForward": "ignore"
+		},
+		"8080": {
+			"label": "Shlink API",
+			"onAutoForward": "ignore"
+		}
+	},
+	"postCreateCommand": "pnpm install",
+	"remoteUser": "node"
 }

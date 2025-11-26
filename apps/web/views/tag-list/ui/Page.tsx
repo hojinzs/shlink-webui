@@ -3,9 +3,7 @@ import { TagListTable } from "@features/tags/tag-list-table";
 
 export default async function TagsPage() {
     const data = await shlink.listTags();
-    
-    // Ensure stats exist (API might return empty stats object if no tags have stats)
-    const stats = data.tags.stats || {};
+    const stats = await shlink.getTagsStats(data.tags.data);
 
     return (
         <div className="p-6">

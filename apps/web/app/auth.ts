@@ -9,6 +9,11 @@ const config = {
             issuer: process.env.AUTHENTIK_ISSUER,
         }),
     ],
+    trustHost: true,
+    debug: true,
+    session: {
+        strategy: "jwt",
+    },
 } satisfies NextAuthConfig
 
 export const { handlers, auth, signIn, signOut } = NextAuth(config)

@@ -46,8 +46,8 @@ export const shlink = {
         return res.json();
     },
 
-    async listTags(): Promise<{ tags: { data: string[]; stats: Record<string, { shortUrlsCount: number; visitsCount: number }> } }> {
-        const res = await fetch(`${SHLINK_URL}/rest/v3/tags?withStats=true`, {
+    async listTags(): Promise<{ tags: { data: string[] } }> {
+        const res = await fetch(`${SHLINK_URL}/rest/v3/tags`, {
             headers: {
                 "X-Api-Key": SHLINK_API_KEY!,
                 "Accept": "application/json",
@@ -60,6 +60,38 @@ export const shlink = {
         }
 
         return res.json();
+    },
+
+    async getTagsStats(tags: string[]): Promise<Record<string, { shortUrlsCount: number; visitsCount: number }>> {
+        const stats: Record<string, { shortUrlsCount: number; visitsCount: number }> = {};
+
+        await Promise.all(tags.map(async (tag) => {
+            try {
+                const [shortUrlsRes, visitsRes] = await Promise.all([
+                    fetch(`${SHLINK_URL}/rest/v3/short-urls?tags[]=${encodeURIComponent(tag)}&itemsPerPage=1`, {
+                        headers: { "X-Api-Key": SHLINK_API_KEY!, "Accept": "application/json" },
+                        cache: "no-store",
+                    }),
+                    fetch(`${SHLINK_URL}/rest/v3/tags/${encodeURIComponent(tag)}/visits?itemsPerPage=1`, {
+                        headers: { "X-Api-Key": SHLINK_API_KEY!, "Accept": "application/json" },
+                        cache: "no-store",
+                    })
+                ]);
+
+                const shortUrlsData = shortUrlsRes.ok ? await shortUrlsRes.json() : { pagination: { totalItems: 0 } };
+                const visitsData = visitsRes.ok ? await visitsRes.json() : { pagination: { totalItems: 0 } };
+
+                stats[tag] = {
+                    shortUrlsCount: shortUrlsData.shortUrls?.pagination?.totalItems ?? shortUrlsData.pagination?.totalItems ?? 0,
+                    visitsCount: visitsData.visits?.pagination?.totalItems ?? visitsData.pagination?.totalItems ?? 0,
+                };
+            } catch (error) {
+                console.error(`Failed to fetch stats for tag ${tag}:`, error);
+                stats[tag] = { shortUrlsCount: 0, visitsCount: 0 };
+            }
+        }));
+
+        return stats;
     },
 
     async createTags(tags: string[]): Promise<void> {

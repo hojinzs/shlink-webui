@@ -48,7 +48,7 @@ export function Sidebar() {
                 <form
                     action={async () => {
                         "use server";
-                        await signOut();
+                        await signOut({ redirectTo: "/login" });
                     }}
                 >
                     <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10">

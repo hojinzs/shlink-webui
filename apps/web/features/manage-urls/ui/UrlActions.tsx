@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { QrCode } from "lucide-react";
 
 interface UrlActionsProps {
     shortCode: string;
@@ -10,8 +11,8 @@ interface UrlActionsProps {
 }
 
 export function UrlActions({ shortCode, qrCodeUrl, onDelete }: UrlActionsProps) {
-    const [showQr, setShowQr] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const router = useRouter();
 
     const handleDelete = async () => {
         if (!confirm("Are you sure you want to delete this short URL?")) return;
@@ -25,22 +26,24 @@ export function UrlActions({ shortCode, qrCodeUrl, onDelete }: UrlActionsProps) 
         }
     };
 
+    const handleQrClick = () => {
+        // Extract the short URL from the qrCodeUrl (which is like ".../qr-code")
+        // Or better, just pass the shortUrl directly if available.
+        // Looking at the usage in UrlListTable: qrCodeUrl={`${url.shortUrl}/qr-code`}
+        // So we can strip "/qr-code" to get the shortUrl.
+        const shortUrl = qrCodeUrl.replace(/\/qr-code$/, "");
+        router.push(`/qr-code?url=${encodeURIComponent(shortUrl)}`);
+    };
+
     return (
         <div className="flex items-center space-x-2">
-            <div className="relative">
-                <button
-                    onClick={() => setShowQr(!showQr)}
-                    className="text-gray-600 hover:text-blue-600"
-                    title="Show QR Code"
-                >
-                    QR
-                </button>
-                {showQr && (
-                    <div className="absolute right-0 top-full mt-2 p-2 bg-white shadow-lg rounded border z-10">
-                        <Image src={qrCodeUrl} alt="QR Code" width={150} height={150} unoptimized />
-                    </div>
-                )}
-            </div>
+            <button
+                onClick={handleQrClick}
+                className="text-gray-600 hover:text-blue-600"
+                title="Generate QR Code"
+            >
+                <QrCode className="h-4 w-4" />
+            </button>
 
             <button
                 onClick={handleDelete}

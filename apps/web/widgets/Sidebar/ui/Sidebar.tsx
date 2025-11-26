@@ -7,7 +7,8 @@ import {
     Link as LinkIcon,
     PlusCircle,
     Tags,
-    LogOut
+    LogOut,
+    QrCode
 } from "lucide-react";
 
 export function Sidebar() {
@@ -40,6 +41,12 @@ export function Sidebar() {
                     <Link href="/tags">
                         <Tags className="mr-2 h-4 w-4" />
                         Tags
+                    </Link>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                    <Link href="/qr-code">
+                        <QrCode className="mr-2 h-4 w-4" />
+                        QR Code
                     </Link>
                 </Button>
             </nav>

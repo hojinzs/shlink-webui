@@ -1,5 +1,5 @@
 import { signIn } from "@app/auth"
-import { Button } from "@repo/ui/button"
+import { Button } from "@shlink-webui/ui/button"
 
 export default function LoginPage() {
     return (

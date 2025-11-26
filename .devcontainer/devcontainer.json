@@ -6,6 +6,15 @@
 	],
 	"service": "app",
 	"workspaceFolder": "/workspace",
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": "false"
+		},
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "22",
+			"pnpmVersion": "9.0.0"
+		}
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -42,21 +51,6 @@
 			]
 		}
 	},
-	"forwardPorts": [3000, 9000, 8080],
-	"portsAttributes": {
-		"3000": {
-			"label": "Next.js Dev Server",
-			"onAutoForward": "notify"
-		},
-		"9000": {
-			"label": "Authentik",
-			"onAutoForward": "ignore"
-		},
-		"8080": {
-			"label": "Shlink API",
-			"onAutoForward": "ignore"
-		}
-	},
 	"postCreateCommand": "pnpm install",
-	"remoteUser": "node"
+	"remoteUser": "vscode"
 }

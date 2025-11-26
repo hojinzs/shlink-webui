@@ -29,17 +29,32 @@ A modern, self-hosted URL shortener web application built on top of [Shlink](htt
 This Turborepo includes the following packages/apps:
 
 ### Apps
+
 - `apps/web`: The main Next.js web application.
 - `apps/docs`: Documentation site (Next.js).
 
 ### Packages
+
 - `packages/ui`: Shared React component library.
 - `packages/eslint-config`: Shared ESLint configurations.
 - `packages/typescript-config`: Shared TypeScript configurations.
 
+## Architecture
+
+This project follows the **Feature-Sliced Design (FSD)** architecture.
+The `apps/web` application is organized into the following layers (at the root of `apps/web`):
+
+- **`app`**: Application-wide settings, styles, and providers. Contains the Next.js App Router setup.
+- **`views`**: Page components that compose widgets and features. (Note: Named `views` to avoid conflict with Next.js `pages` directory).
+- **`widgets`**: Compositional layers that combine entities and features into meaningful blocks (e.g., `Sidebar`, `VisitsChart`).
+- **`features`**: User interactions and business logic (e.g., `manage-urls`).
+- **`entities`**: Business domain entities (e.g., `Url`, `Tag`, `Visit`).
+- **`shared`**: Reusable code, UI components, and libraries (e.g., `components`, `utils`).
+
 ## Development Setup
 
 ### 1. Start Infrastructure
+
 Start the required services (Authentik, Shlink, PostgreSQL, Redis) using Docker Compose:
 
 ```bash
@@ -47,25 +62,27 @@ docker-compose -f docker-compose.development.yaml up -d
 ```
 
 ### 2. Configure Authentik
+
 1.  Access Authentik at [http://localhost:9000/if/flow/initial-setup/](http://localhost:9000/if/flow/initial-setup/) and set up the admin account (`akadmin`).
 2.  **Create a Provider**:
-    *   Go to **Applications** -> **Providers**.
-    *   Create a new **OAuth2/OpenID Provider**.
-    *   **Name**: Shlink Provider
-    *   **Client Type**: Confidential
-    *   **Redirect URIs**: `http://localhost:3000/api/auth/callback/authentik`
-    *   **Signing Key**: Select the default certificate.
-    *   Save and copy the **Client ID** and **Client Secret**.
+    - Go to **Applications** -> **Providers**.
+    - Create a new **OAuth2/OpenID Provider**.
+    - **Name**: Shlink Provider
+    - **Client Type**: Confidential
+    - **Redirect URIs**: `http://localhost:3000/api/auth/callback/authentik`
+    - **Signing Key**: Select the default certificate.
+    - Save and copy the **Client ID** and **Client Secret**.
 3.  **Create an Application**:
-    *   Go to **Applications** -> **Applications**.
-    *   Create a new Application.
-    *   **Name**: Shlink
-    *   **Slug**: `shlink`
-    *   **Provider**: Select "Shlink Provider".
-    *   **Launch URL**: `http://localhost:3000`
-    *   Save.
+    - Go to **Applications** -> **Applications**.
+    - Create a new Application.
+    - **Name**: Shlink
+    - **Slug**: `shlink`
+    - **Provider**: Select "Shlink Provider".
+    - **Launch URL**: `http://localhost:3000`
+    - Save.
 
 ### 3. Configure Shlink
+
 Generate an API key for Shlink:
 
 ```bash
@@ -76,6 +93,7 @@ docker exec -it shlink-webui-shlink-1 shlink api-key:generate
 Copy the generated API key.
 
 ### 4. Configure Web App
+
 1.  Rename `apps/web/env.local` to `apps/web/.env.local`.
 2.  Update `apps/web/.env.local` with the values from Authentik and Shlink:
 
@@ -90,6 +108,7 @@ NEXTAUTH_URL=http://localhost:3000
 ```
 
 ### 5. Start Development Server
+
 ```bash
 pnpm dev
 ```

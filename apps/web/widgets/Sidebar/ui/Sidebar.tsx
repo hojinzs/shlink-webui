@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { signOut } from "@/auth";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { signOut } from "@app/auth";
+import { Button } from "@shared/components/button";
+import { Separator } from "@shared/components/separator";
 import {
     LayoutDashboard,
     Link as LinkIcon,

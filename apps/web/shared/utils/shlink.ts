@@ -288,4 +288,42 @@ export const shlink = {
 
     return res.json();
   },
+  async renameTag(oldName: string, newName: string): Promise<void> {
+    const res = await fetch(`${SHLINK_URL}/rest/v3/tags`, {
+      method: "PUT",
+      headers: {
+        "X-Api-Key": SHLINK_API_KEY!,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ oldName, newName }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(
+        `Failed to rename tag: ${res.statusText} ${
+          errorData.detail ? `(${errorData.detail})` : ""
+        }`
+      );
+    }
+  },
+
+  async deleteTags(tags: string[]): Promise<void> {
+    const searchParams = new URLSearchParams();
+    tags.forEach((tag) => searchParams.append("tags[]", tag));
+
+    const res = await fetch(
+      `${SHLINK_URL}/rest/v3/tags?${searchParams.toString()}`,
+      {
+        method: "DELETE",
+        headers: {
+          "X-Api-Key": SHLINK_API_KEY!,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Failed to delete tags: ${res.statusText}`);
+    }
+  },
 };

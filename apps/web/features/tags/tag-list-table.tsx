@@ -12,6 +12,7 @@ import {
 import { Input } from "@shared/components/input";
 import { Badge } from "@shared/components/badge";
 import { CreateTagDialog } from "@features/tags/create-tag-dialog";
+import { EditTagDialog } from "@features/tags/edit-tag-dialog";
 import { getDisplayTags, isCustomTag } from "@shared/utils/tags";
 
 interface TagStats {
@@ -52,12 +53,13 @@ export function TagListTable({ tags, stats }: TagListTableProps) {
                             <TableHead>Tag</TableHead>
                             <TableHead className="text-right">Short URLs</TableHead>
                             <TableHead className="text-right">Visits</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filteredTags.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">
+                                <TableCell colSpan={4} className="h-24 text-center">
                                     No tags found.
                                 </TableCell>
                             </TableRow>
@@ -78,6 +80,9 @@ export function TagListTable({ tags, stats }: TagListTableProps) {
                                         </TableCell>
                                         <TableCell className="text-right text-blue-500 font-medium">
                                             {tagStats.visitsCount}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <EditTagDialog tagName={displayTag} />
                                         </TableCell>
                                     </TableRow>
                                 );

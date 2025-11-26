@@ -1,74 +1,154 @@
 import { auth } from "@app/auth";
 import { shlink } from "@shared/utils/shlink";
-import { VisitsChart } from "@widgets/VisitsChart/ui/VisitsChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/card";
+import { UrlListTable } from "@features/urls/ui/UrlListTable";
+import Link from "next/link";
+import { Button } from "@shared/components/button";
+import { Input } from "@shared/components/input";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { formatTag, TAG_PREFIXES } from "@shared/utils/tags";
 
 export default async function HomePage() {
   const session = await auth();
 
-  let stats = { totalUrls: 0 };
-  let chartData: { date: string; count: number }[] = [];
+  let stats = { 
+    visits: 0, 
+    orphanVisits: 0, 
+    shortUrls: 0, 
+    tags: 0 
+  };
+  let recentUrls: any[] = [];
 
   try {
-    const [urlsData, visitsData] = await Promise.all([
-      shlink.listShortUrls(1, 1),
-      shlink.getVisits()
+    const [urlsData, visitsData, orphanVisitsData, tagsData] = await Promise.all([
+      shlink.listShortUrls(1, 5),
+      shlink.getVisits(),
+      shlink.getOrphanVisits(),
+      shlink.listTags()
     ]);
 
-    stats.totalUrls = urlsData?.shortUrls?.pagination?.totalItems || 0;
+    stats.shortUrls = urlsData?.shortUrls?.pagination?.totalItems || 0;
+    stats.visits = visitsData?.visits?.pagination?.totalItems || 0;
+    stats.orphanVisits = orphanVisitsData?.visits?.pagination?.totalItems || 0;
+    stats.tags = tagsData?.tags?.data?.filter(tag => tag.startsWith("custom:"))?.length || 0;
 
-    // Process visits data for chart (group by date)
-    if (visitsData?.visits?.data) {
-      const visitsByDate = visitsData.visits.data.reduce((acc: any, visit: any) => {
-        const date = new Date(visit.date).toLocaleDateString();
-        acc[date] = (acc[date] || 0) + 1;
-        return acc;
-      }, {});
-
-      chartData = Object.entries(visitsByDate).map(([date, count]) => ({
-        date,
-        count: count as number,
-      })).slice(-7); // Last 7 days with data
-    } else {
-      console.warn("Unexpected visits data structure:", visitsData);
-    }
+    recentUrls = urlsData?.shortUrls?.data || [];
 
   } catch (e) {
     console.error("Failed to fetch stats", e);
   }
 
+  async function createUrl(formData: FormData) {
+    "use server";
+    const longUrl = formData.get("longUrl") as string;
+    const customSlug = formData.get("customSlug") as string;
+    const tagsInput = formData.get("tags") as string;
+
+    if (!longUrl) return;
+
+    const session = await auth();
+    const userId = session?.user?.email || session?.user?.name || "unknown";
+
+    const tags = tagsInput ? tagsInput.split(",").map(t => t.trim()).filter(Boolean) : [];
+    
+    const formattedTags = [
+        ...tags.map(t => formatTag(TAG_PREFIXES.CUSTOM, t)),
+        formatTag(TAG_PREFIXES.CREATED_BY, userId)
+    ];
+
+    await shlink.createShortUrl(longUrl, formattedTags, customSlug || undefined);
+    revalidatePath("/");
+    revalidatePath("/urls");
+  }
+
+  async function deleteUrl(shortCode: string) {
+    "use server";
+    await shlink.deleteShortUrl(shortCode);
+    revalidatePath("/");
+    revalidatePath("/urls");
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+      {/* Stats Section */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Short URLs
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">VISITS</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUrls}</div>
+            <div className="text-2xl font-bold">{stats.visits}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active User
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">ORPHAN VISITS</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold truncate">{session?.user?.name || session?.user?.email}</div>
+            <div className="text-2xl font-bold">{stats.orphanVisits}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">SHORT URLS</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.shortUrls}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">TAGS</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.tags}</div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle>Recent Visits</CardTitle>
+      {/* Create Short URL Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Create a short URL</CardTitle>
+          <Link href="/urls/create" className="text-sm text-blue-600 hover:underline">
+            Advanced options »
+          </Link>
         </CardHeader>
-        <CardContent className="pl-2">
-          <VisitsChart data={chartData} />
+        <CardContent>
+          <form action={createUrl} className="space-y-4">
+            <Input 
+              name="longUrl" 
+              placeholder="URL to be shortened" 
+              required 
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Input 
+                name="customSlug" 
+                placeholder="Custom slug" 
+              />
+              <Input 
+                name="tags" 
+                placeholder="Add tags to the URL (comma separated)" 
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit">Save</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Recently Created URLs Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Recently created URLs</CardTitle>
+          <Link href="/urls" className="text-sm text-blue-600 hover:underline">
+            See all »
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <UrlListTable shortUrls={recentUrls} onDelete={deleteUrl} />
         </CardContent>
       </Card>
     </div>

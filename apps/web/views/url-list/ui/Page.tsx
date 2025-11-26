@@ -1,6 +1,7 @@
 import { shlink } from "@shared/utils/shlink";
 import Link from "next/link";
 import { UrlActions } from "@features/manage-urls/ui/UrlActions";
+import { UrlListTable } from "@features/urls/ui/UrlListTable";
 import { revalidatePath } from "next/cache";
 
 export default async function UrlsPage({
@@ -29,56 +30,10 @@ export default async function UrlsPage({
                 </Link>
             </div>
 
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Short URL
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Long URL
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Visits
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Created
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {data.shortUrls.data.map((url) => (
-                            <tr key={url.shortCode}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <a href={url.shortUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
-                                        {url.shortUrl}
-                                    </a>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">
-                                    {url.longUrl}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {url.visitsSummary?.total || 0}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {new Date(url.dateCreated).toLocaleDateString()}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <UrlActions
-                                        shortCode={url.shortCode}
-                                        qrCodeUrl={shlink.getQrCodeUrl(url.shortCode)}
-                                        onDelete={deleteUrl}
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <UrlListTable 
+                shortUrls={data.shortUrls.data} 
+                onDelete={deleteUrl} 
+            />
 
             <div className="mt-4 flex justify-between items-center">
                 <div>

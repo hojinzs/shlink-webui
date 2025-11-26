@@ -1,5 +1,7 @@
 "use client";
 
+import { format } from "date-fns";
+
 import { UrlActions } from "@features/manage-urls/ui/UrlActions";
 import { ShortUrl } from "@shared/utils/shlink";
 import { Badge } from "@shared/components/badge";
@@ -60,7 +62,7 @@ export function UrlListTable({ shortUrls, onDelete }: UrlListTableProps) {
                                 {url.visitsSummary?.total || 0}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {new Date(url.dateCreated).toLocaleDateString()}
+                                {format(new Date(url.dateCreated), "yyyy/MM/dd hh:mm")}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <UrlActions

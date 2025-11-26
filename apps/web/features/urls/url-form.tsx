@@ -25,19 +25,21 @@ interface UrlFormProps {
         forwardQuery?: boolean;
     };
     action: (formData: FormData) => Promise<void>;
+    onDelete?: () => Promise<void>;
     submitLabel?: string;
 }
 
-export function UrlForm({ availableTags, initialData, action, submitLabel = "Save" }: UrlFormProps) {
+export function UrlForm({ availableTags, initialData, action, onDelete, submitLabel = "Save" }: UrlFormProps) {
     const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.tags || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(!!initialData);
 
     const handleSubmit = async (formData: FormData) => {
         setIsSubmitting(true);
         // Append tags to formData
         selectedTags.forEach(tag => formData.append("tags", tag));
-        
+
         try {
             await action(formData);
         } catch (error) {
@@ -45,6 +47,20 @@ export function UrlForm({ availableTags, initialData, action, submitLabel = "Sav
             // Ideally show a toast here
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!onDelete) return;
+        if (!confirm("Are you sure you want to delete this short URL?")) return;
+
+        setIsDeleting(true);
+        try {
+            await onDelete();
+        } catch (error) {
+            console.error("Failed to delete URL", error);
+            alert("Failed to delete URL");
+            setIsDeleting(false);
         }
     };
 
@@ -85,9 +101,9 @@ export function UrlForm({ availableTags, initialData, action, submitLabel = "Sav
             </Card>
 
             <div className="flex justify-center">
-                <Button 
-                    type="button" 
-                    variant="ghost" 
+                <Button
+                    type="button"
+                    variant="ghost"
                     onClick={() => setShowAdvanced(!showAdvanced)}
                     className="text-muted-foreground"
                 >
@@ -250,11 +266,21 @@ export function UrlForm({ availableTags, initialData, action, submitLabel = "Sav
                 </div>
             )}
 
-            <div className="pt-4 sticky bottom-0 bg-background pb-4 border-t mt-8">
+            <div className="pt-4 sticky bottom-0 bg-background pb-4 border-t mt-8 flex items-center justify-between gap-4">
+                {onDelete && (
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={isDeleting || isSubmitting}
+                    >
+                        {isDeleting ? "Deleting..." : "Delete URL"}
+                    </Button>
+                )}
                 <Button
                     type="submit"
                     className="w-full md:w-auto md:min-w-[200px]"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isDeleting}
                 >
                     {isSubmitting ? "Saving..." : submitLabel}
                 </Button>

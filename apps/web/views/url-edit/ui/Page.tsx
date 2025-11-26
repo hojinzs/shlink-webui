@@ -21,7 +21,7 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         "use server";
         const longUrl = formData.get("longUrl") as string;
         const tags = formData.getAll("tags") as string[];
-        
+
         // Extract optional fields
         const title = formData.get("title") as string;
         const validSince = formData.get("validSince") as string;
@@ -50,7 +50,14 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
             crawlable,
             forwardQuery
         });
-        
+
+        revalidatePath("/urls");
+        redirect("/urls");
+    }
+
+    async function deleteUrl() {
+        "use server";
+        await shlink.deleteShortUrl(shortCode);
         revalidatePath("/urls");
         redirect("/urls");
     }
@@ -72,11 +79,12 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
     return (
         <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold mb-6">Edit Short URL</h1>
-            <UrlForm 
-                availableTags={availableTags} 
-                initialData={initialData} 
-                action={updateUrl} 
-                submitLabel="Save Changes" 
+            <UrlForm
+                availableTags={availableTags}
+                initialData={initialData}
+                action={updateUrl}
+                onDelete={deleteUrl}
+                submitLabel="Save Changes"
             />
         </div>
     );

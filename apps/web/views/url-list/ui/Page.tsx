@@ -62,7 +62,7 @@ export default async function UrlsPage({
                                     {url.longUrl}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {url.visitsCount}
+                                    {url.visitsSummary?.total || 0}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {new Date(url.dateCreated).toLocaleDateString()}

@@ -10,7 +10,11 @@ export interface ShortUrl {
     shortUrl: string;
     longUrl: string;
     dateCreated: string;
-    visitsCount: number;
+    visitsSummary: {
+        total: number;
+        nonBots: number;
+        bots: number;
+    };
     tags: string[];
 }
 

@@ -1,0 +1,20 @@
+{
+	"name": "Shlink WebUI Dev",
+	"dockerComposeFile": [
+		"../docker-compose.development.yaml",
+		"docker-compose.devcontainer.yaml"
+	],
+	"service": "app",
+	"workspaceFolder": "/workspace",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"bradlc.vscode-tailwindcss"
+			]
+		}
+	},
+    "postCreateCommand": "pnpm install",
+    "remoteUser": "node"
+}

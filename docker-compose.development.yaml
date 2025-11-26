@@ -11,7 +11,7 @@ services:
       timeout: 5s
     volumes:
       - database_data:/var/lib/postgresql/data
-      - ./init-shlink-db.sh:/docker-entrypoint-initdb.d/init-shlink-db.sh
+      - ./db/init-shlink-db.sh:/docker-entrypoint-initdb.d/init-shlink-db.sh
     environment:
       POSTGRES_PASSWORD: ${PG_PASS:-postgres}
       POSTGRES_USER: ${PG_USER:-postgres}
@@ -45,8 +45,8 @@ services:
       AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
       AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS:-postgres}
     volumes:
-      - ./media:/media
-      - ./custom-templates:/templates
+      - ./authentik/media:/media
+      - ./authentik/custom-templates:/templates
     env_file:
       - .env.docker
     ports:
@@ -70,9 +70,9 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./media:/media
-      - ./certs:/certs
-      - ./custom-templates:/templates
+      - ./authentik/media:/media
+      - ./authentik/certs:/certs
+      - ./authentik/custom-templates:/templates
     env_file:
       - .env.docker
     depends_on:

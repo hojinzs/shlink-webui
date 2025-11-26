@@ -46,13 +46,13 @@ export const shlink = {
         return res.json();
     },
 
-    async listTags(): Promise<{ tags: { data: string[] } }> {
-        const res = await fetch(`${SHLINK_URL}/rest/v3/tags`, {
+    async listTags(): Promise<{ tags: { data: string[]; stats: Record<string, { shortUrlsCount: number; visitsCount: number }> } }> {
+        const res = await fetch(`${SHLINK_URL}/rest/v3/tags?withStats=true`, {
             headers: {
                 "X-Api-Key": SHLINK_API_KEY!,
                 "Accept": "application/json",
             },
-            next: { revalidate: 60 },
+            cache: "no-store",
         });
 
         if (!res.ok) {
@@ -60,6 +60,19 @@ export const shlink = {
         }
 
         return res.json();
+    },
+
+    async createTags(tags: string[]): Promise<void> {
+        // Workaround: POST /tags is not supported on this Shlink instance.
+        // We create a dummy URL with the tags and then delete it.
+        const dummyUrl = `https://example.com/tag-placeholder-${Date.now()}`;
+        try {
+            const shortUrl = await this.createShortUrl(dummyUrl, tags);
+            await this.deleteShortUrl(shortUrl.shortCode);
+        } catch (error) {
+            console.error("[Shlink] Failed to create tags via workaround:", error);
+            throw error;
+        }
     },
 
     async createShortUrl(longUrl: string, tags: string[] = [], customSlug?: string) {

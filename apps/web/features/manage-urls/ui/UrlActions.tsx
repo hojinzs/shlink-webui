@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { QrCode } from "lucide-react";
+import { QrCode, Pencil } from "lucide-react";
 
 interface UrlActionsProps {
     shortCode: string;
@@ -43,6 +43,14 @@ export function UrlActions({ shortCode, qrCodeUrl, onDelete }: UrlActionsProps) 
                 title="Generate QR Code"
             >
                 <QrCode className="h-4 w-4" />
+            </button>
+
+            <button
+                onClick={() => router.push(`/urls/${shortCode}/edit`)}
+                className="text-gray-600 hover:text-blue-600"
+                title="Edit URL"
+            >
+                <Pencil className="h-4 w-4" />
             </button>
 
             <button

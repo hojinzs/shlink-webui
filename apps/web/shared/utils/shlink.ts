@@ -16,6 +16,13 @@ export interface ShortUrl {
     bots: number;
   };
   tags: string[];
+  meta: {
+    validSince?: string;
+    validUntil?: string;
+    maxVisits?: number;
+  };
+  crawlable?: boolean;
+  forwardQuery?: boolean;
 }
 
 export interface ShlinkResponse<T> {
@@ -145,10 +152,20 @@ export const shlink = {
   async createShortUrl(
     longUrl: string,
     tags: string[] = [],
-    customSlug?: string
+    options: {
+      customSlug?: string;
+      shortCodeLength?: number;
+      domain?: string;
+      findIfExists?: boolean;
+      validSince?: string;
+      validUntil?: string;
+      maxVisits?: number;
+      title?: string;
+      crawlable?: boolean;
+      forwardQuery?: boolean;
+    } = {}
   ) {
-    const body: any = { longUrl, tags };
-    if (customSlug) body.customSlug = customSlug;
+    const body: any = { longUrl, tags, ...options };
 
     const res = await fetch(`${SHLINK_URL}/rest/v3/short-urls`, {
       method: "POST",
@@ -161,7 +178,63 @@ export const shlink = {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to create short URL: ${res.statusText}`);
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(
+        `Failed to create short URL: ${res.statusText} ${
+          errorData.detail ? `(${errorData.detail})` : ""
+        }`
+      );
+    }
+
+    return res.json();
+  },
+
+  async getShortUrl(shortCode: string): Promise<ShortUrl> {
+    const res = await fetch(`${SHLINK_URL}/rest/v3/short-urls/${shortCode}`, {
+      headers: {
+        "X-Api-Key": SHLINK_API_KEY!,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch short URL: ${res.statusText}`);
+    }
+
+    return res.json();
+  },
+
+  async updateShortUrl(
+    shortCode: string,
+    data: {
+      longUrl?: string;
+      tags?: string[];
+      title?: string;
+      validSince?: string | null;
+      validUntil?: string | null;
+      maxVisits?: number | null;
+      crawlable?: boolean;
+      forwardQuery?: boolean;
+    }
+  ): Promise<ShortUrl> {
+    const res = await fetch(`${SHLINK_URL}/rest/v3/short-urls/${shortCode}`, {
+      method: "PATCH",
+      headers: {
+        "X-Api-Key": SHLINK_API_KEY!,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(
+        `Failed to update short URL: ${res.statusText} ${
+          errorData.detail ? `(${errorData.detail})` : ""
+        }`
+      );
     }
 
     return res.json();

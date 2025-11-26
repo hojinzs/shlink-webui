@@ -57,7 +57,7 @@ export default async function HomePage() {
         formatTag(TAG_PREFIXES.CREATED_BY, userId)
     ];
 
-    await shlink.createShortUrl(longUrl, formattedTags, customSlug || undefined);
+    await shlink.createShortUrl(longUrl, formattedTags, { customSlug: customSlug || undefined });
     revalidatePath("/");
     revalidatePath("/urls");
   }

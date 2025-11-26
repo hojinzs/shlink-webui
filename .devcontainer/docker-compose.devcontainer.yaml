@@ -2,7 +2,7 @@ services:
   app:
     image: mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye
     volumes:
-      - ..:/workspace:cached
+      - .:/workspace:cached
     working_dir: /workspace
     ports:
       - "3000:3000"

@@ -1,7 +1,6 @@
 {
 	"name": "Shlink WebUI Dev",
 	"dockerComposeFile": [
-		"../docker-compose.development.yaml",
 		"docker-compose.devcontainer.yaml"
 	],
 	"service": "app",

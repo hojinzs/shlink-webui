@@ -17,14 +17,6 @@
 		"coder": {
 			"apps": [
 				{
-					"slug": "vscode",
-					"displayName": "Visual Studio Code",
-					"url": "vscode://coder.coder-remote/openDevContainer?owner=${localEnv:CODER_WORKSPACE_OWNER_NAME}&workspace=${localEnv:CODER_WORKSPACE_NAME}&agent=${localEnv:CODER_WORKSPACE_PARENT_AGENT_NAME}&url=${localEnv:CODER_URL}&token=$SESSION_TOKEN&devContainerName=${localEnv:CONTAINER_ID}&devContainerFolder=${containerWorkspaceFolder}&localWorkspaceFolder=${localWorkspaceFolder}",
-					"external": true,
-					"icon": "/icon/code.svg",
-					"order": 1
-				},
-				{
 					"slug": "antigravity",
 					"displayName": "Antigravity",
 					"url": "antigravity://coder.coder-remote/openDevContainer?owner=${localEnv:CODER_WORKSPACE_OWNER_NAME}&workspace=${localEnv:CODER_WORKSPACE_NAME}&agent=${localEnv:CODER_WORKSPACE_PARENT_AGENT_NAME}&url=${localEnv:CODER_URL}&token=$SESSION_TOKEN&devContainerName=${localEnv:CONTAINER_ID}&devContainerFolder=${containerWorkspaceFolder}&localWorkspaceFolder=${localWorkspaceFolder}",
@@ -40,7 +32,7 @@
 					"share": "${localEnv:FEATURE_CODE_SERVER_OPTION_APPSHARE:owner}",
 					"icon": "/icon/code.svg",
 					"group": "${localEnv:FEATURE_CODE_SERVER_OPTION_APPGROUP:Web Editors}",
-					"order": 1,
+					"order": 3,
 					"healthCheck": {
 						"url": "https://${localEnv:FEATURE_CODE_SERVER_OPTION_HOST:127.0.0.1}:${localEnv:FEATURE_CODE_SERVER_OPTION_PORT:8080}/healthz",
 						"interval": 5,

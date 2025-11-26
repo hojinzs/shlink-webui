@@ -36,6 +36,21 @@ export interface ShlinkResponse<T> {
   };
 }
 
+export interface VisitsSummary {
+  visits: {
+    nonOrphanVisits: {
+      total: number;
+      nonBots: number;
+      bots: number;
+    };
+    orphanVisits: {
+      total: number;
+      nonBots: number;
+      bots: number;
+    };
+  };
+}
+
 export const shlink = {
   async listShortUrls(
     page = 1,
@@ -257,7 +272,7 @@ export const shlink = {
     return `${SHLINK_URL}/${shortCode}/qr-code?size=${size}&format=png`;
   },
 
-  async getVisits(): Promise<{ visits: { data: any[], pagination: { totalItems: number } } }> {
+  async getVisits(): Promise<VisitsSummary> {
     const res = await fetch(`${SHLINK_URL}/rest/v3/visits`, {
       headers: {
         "X-Api-Key": SHLINK_API_KEY!,

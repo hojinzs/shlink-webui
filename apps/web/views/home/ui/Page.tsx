@@ -29,7 +29,7 @@ export default async function HomePage() {
     ]);
 
     stats.shortUrls = urlsData?.shortUrls?.pagination?.totalItems || 0;
-    stats.visits = visitsData?.visits?.pagination?.totalItems || 0;
+    stats.visits = visitsData?.visits?.nonOrphanVisits?.total || 0;
     stats.orphanVisits = orphanVisitsData?.visits?.pagination?.totalItems || 0;
     stats.tags = tagsData?.tags?.data?.filter(tag => tag.startsWith("custom:"))?.length || 0;
 

@@ -54,8 +54,15 @@ export function formatTag(prefix: TagPrefix, value: string): string {
 export function getDisplayTags(tags: string[]): string[] {
     return tags
         .map(parseTag)
-        .filter(t => t.prefix === TAG_PREFIXES.CUSTOM)
-        .map(t => t.value);
+        .filter(t => t.prefix === TAG_PREFIXES.CUSTOM || UTM_PREFIXES.includes(t.prefix as UtmPrefix))
+        .map(t => {
+            // For custom tags, show only the value
+            if (t.prefix === TAG_PREFIXES.CUSTOM) {
+                return t.value;
+            }
+            // For UTM tags, show the full tag (prefix:value)
+            return t.original;
+        });
 }
 
 export function isCustomTag(tag: string): boolean {

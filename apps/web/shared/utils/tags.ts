@@ -23,15 +23,6 @@ export const UTM_PREFIXES = [
 
 export type UtmPrefix = typeof UTM_PREFIXES[number];
 
-// Shared constant for UTM parameter keys to ensure consistency
-const UTM_PARAMETER_KEYS: (keyof UtmParameters)[] = [
-    'utm_source',
-    'utm_medium',
-    'utm_campaign',
-    'utm_term',
-    'utm_content'
-] as const;
-
 export interface ParsedTag {
     prefix: string | null;
     value: string;
@@ -45,6 +36,15 @@ export interface UtmParameters {
     utm_term?: string;
     utm_content?: string;
 }
+
+// Shared constant for UTM parameter keys to ensure consistency
+const UTM_PARAMETER_KEYS: (keyof UtmParameters)[] = [
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_term',
+    'utm_content'
+] as const;
 
 export function parseTag(tag: string): ParsedTag {
     const parts = tag.split(':');
@@ -145,9 +145,9 @@ export function buildUrlWithUtmParams(baseUrl: string, utmParams: UtmParameters)
         return url.toString();
     } catch (error) {
         // Log the error instead of failing silently, but preserve existing fallback behavior
-        // Don't log the baseUrl to avoid exposing sensitive information
+        // Don't log the full error or baseUrl to avoid exposing sensitive information
         // eslint-disable-next-line no-console
-        console.error('buildUrlWithUtmParams: invalid baseUrl provided', error);
+        console.error('buildUrlWithUtmParams: invalid baseUrl provided');
         return baseUrl;
     }
 }

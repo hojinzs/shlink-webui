@@ -187,8 +187,9 @@ export function parseUtmTagsFromFormData(utmTags: string[]): UtmParameters {
     utmTags.forEach(tag => {
         const [prefix, ...valueParts] = tag.split(':');
         const value = valueParts.join(':');
-        // Type-safe check: validate prefix is a known UTM parameter key before assignment
-        if (prefix && value && prefix in UTM_PARAM_TO_PREFIX) {
+        // Type-safe check: validate prefix is a UTM prefix and a valid parameter key
+        if (prefix && value && UTM_PREFIXES.includes(prefix as UtmPrefix)) {
+            // We know prefix is a UtmPrefix, which are the same as UtmParameters keys
             utmParams[prefix as keyof UtmParameters] = value;
         }
     });

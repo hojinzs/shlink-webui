@@ -83,6 +83,7 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
     });
 
     if (conflictingUtmKeys.length > 0) {
+        // Only log parameter names to avoid exposing sensitive values
         console.warn(
             "[EditUrlPage] Conflicting UTM parameters detected between URL and tags. " +
             "Tag values will take precedence for keys:",

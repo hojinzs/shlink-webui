@@ -137,8 +137,9 @@ export function buildUrlWithUtmParams(baseUrl: string, utmParams: UtmParameters)
         return url.toString();
     } catch (error) {
         // Log the error instead of failing silently, but preserve existing fallback behavior
+        // Don't log the baseUrl to avoid exposing sensitive information
         // eslint-disable-next-line no-console
-        console.error('buildUrlWithUtmParams: invalid baseUrl provided', { baseUrl, error });
+        console.error('buildUrlWithUtmParams: invalid baseUrl provided', error);
         return baseUrl;
     }
 }

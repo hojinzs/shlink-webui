@@ -2,11 +2,41 @@ import { shlink } from "@shared/utils/shlink";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@app/auth";
-import { formatTag, getDisplayTags, TAG_PREFIXES } from "@shared/utils/tags";
+import { formatTag, getDisplayTags, TAG_PREFIXES, extractUtmParameters, buildUrlWithUtmParams, UtmParameters } from "@shared/utils/tags";
 import { UrlForm } from "@features/urls/url-form";
 
 interface EditUrlPageProps {
     shortCode: string;
+}
+
+// Helper to extract base URL without UTM parameters
+function getBaseUrl(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+        utmKeys.forEach(key => urlObj.searchParams.delete(key));
+        return urlObj.toString();
+    } catch {
+        return url;
+    }
+}
+
+// Helper to extract UTM parameters from URL
+function extractUtmFromUrl(url: string): UtmParameters {
+    try {
+        const urlObj = new URL(url);
+        const utmParams: UtmParameters = {};
+        const utmKeys: (keyof UtmParameters)[] = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+        utmKeys.forEach(key => {
+            const value = urlObj.searchParams.get(key);
+            if (value) {
+                utmParams[key] = value;
+            }
+        });
+        return utmParams;
+    } catch {
+        return {};
+    }
 }
 
 export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
@@ -21,6 +51,7 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         "use server";
         const longUrl = formData.get("longUrl") as string;
         const tags = formData.getAll("tags") as string[];
+        const utmTags = formData.getAll("utmTags") as string[];
 
         // Extract optional fields
         const title = formData.get("title") as string;
@@ -35,13 +66,27 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         const session = await auth();
         const userId = session?.user?.email || session?.user?.name || "unknown";
 
+        // Build UTM parameters from tags for URL modification
+        const utmParams: UtmParameters = {};
+        utmTags.forEach(tag => {
+            const [prefix, ...valueParts] = tag.split(':');
+            const value = valueParts.join(':');
+            if (prefix && value) {
+                utmParams[prefix as keyof UtmParameters] = value;
+            }
+        });
+
+        // Build the final URL with UTM parameters appended
+        const finalLongUrl = buildUrlWithUtmParams(longUrl, utmParams);
+
         const formattedTags = [
             ...tags.map(t => formatTag(TAG_PREFIXES.CUSTOM, t)),
+            ...utmTags, // UTM tags are already formatted
             formatTag(TAG_PREFIXES.CREATED_BY, userId)
         ];
 
         await shlink.updateShortUrl(shortCode, {
-            longUrl,
+            longUrl: finalLongUrl,
             tags: formattedTags,
             title: title || undefined,
             validSince: validSince || null,
@@ -62,18 +107,28 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         redirect("/urls");
     }
 
+    // Extract UTM parameters from both tags and URL
+    const utmFromTags = extractUtmParameters(shortUrlData.tags);
+    const utmFromUrl = extractUtmFromUrl(shortUrlData.longUrl);
+    // Merge UTM params, preferring tags over URL params
+    const utmParams = { ...utmFromUrl, ...utmFromTags };
+    
+    // Get base URL without UTM parameters for editing
+    const baseUrl = getBaseUrl(shortUrlData.longUrl);
+
     // Prepare initial data
     const initialData = {
-        longUrl: shortUrlData.longUrl,
+        longUrl: baseUrl,
         tags: getDisplayTags(shortUrlData.tags),
-        title: (shortUrlData as any).title, // Assuming title is in the response, though interface might need update
-        customSlug: shortUrlData.shortCode, // Display shortCode as customSlug but disabled
-        shortCodeLength: undefined, // Not editable
-        validSince: (shortUrlData as any).meta?.validSince?.split("+")[0], // Format for datetime-local
+        title: (shortUrlData as any).title,
+        customSlug: shortUrlData.shortCode,
+        shortCodeLength: undefined,
+        validSince: (shortUrlData as any).meta?.validSince?.split("+")[0],
         validUntil: (shortUrlData as any).meta?.validUntil?.split("+")[0],
         maxVisits: (shortUrlData as any).meta?.maxVisits,
         crawlable: (shortUrlData as any).crawlable,
         forwardQuery: (shortUrlData as any).forwardQuery,
+        utmParams,
     };
 
     return (

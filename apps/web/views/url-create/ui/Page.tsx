@@ -2,7 +2,7 @@ import { shlink } from "@shared/utils/shlink";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@app/auth";
-import { formatTag, getDisplayTags, TAG_PREFIXES } from "@shared/utils/tags";
+import { formatTag, getDisplayTags, TAG_PREFIXES, buildUrlWithUtmParams, parseUtmTagsFromFormData } from "@shared/utils/tags";
 import { UrlForm } from "@features/urls/url-form";
 
 export default async function CreateUrlPage() {
@@ -13,6 +13,7 @@ export default async function CreateUrlPage() {
         "use server";
         const longUrl = formData.get("longUrl") as string;
         const tags = formData.getAll("tags") as string[];
+        const utmTags = formData.getAll("utmTags") as string[];
         
         // Extract optional fields
         const customSlug = formData.get("customSlug") as string;
@@ -30,12 +31,19 @@ export default async function CreateUrlPage() {
         const session = await auth();
         const userId = session?.user?.email || session?.user?.name || "unknown";
 
+        // Build UTM parameters from tags for URL modification
+        const utmParams = parseUtmTagsFromFormData(utmTags);
+
+        // Build the final URL with UTM parameters appended
+        const finalLongUrl = buildUrlWithUtmParams(longUrl, utmParams);
+
         const formattedTags = [
             ...tags.map(t => formatTag(TAG_PREFIXES.CUSTOM, t)),
+            ...utmTags, // UTM tags are already formatted
             formatTag(TAG_PREFIXES.CREATED_BY, userId)
         ];
 
-        await shlink.createShortUrl(longUrl, formattedTags, {
+        await shlink.createShortUrl(finalLongUrl, formattedTags, {
             customSlug: customSlug || undefined,
             shortCodeLength,
             title: title || undefined,

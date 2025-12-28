@@ -13,6 +13,18 @@ The Short URL Management feature allows users to control the entire lifecycle of
 - **Long URL**: The destination URL to be shortened. (Required)
 - **Tags**: A list of tags to categorize the short URL. Users should be able to select existing tags or create new ones.
 
+### UTM Parameters
+
+The UTM Parameter Builder allows adding campaign tracking parameters to URLs. See [UTM Parameter Builder](./utm-parameter-builder.md) for detailed documentation.
+
+- **utm_source**: Identifies which site sent the traffic
+- **utm_medium**: Identifies what type of link was used
+- **utm_campaign**: Identifies a specific product promotion or campaign
+- **utm_term**: Identifies search terms (optional)
+- **utm_content**: Identifies what specifically was clicked (optional)
+
+UTM parameters are automatically appended to the destination URL and stored as tags for filtering.
+
 ### Customize the Short URL
 
 - **Title**: A descriptive title for the short URL.

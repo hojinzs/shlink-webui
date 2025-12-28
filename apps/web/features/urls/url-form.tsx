@@ -8,6 +8,8 @@ import { Label } from "@shared/components/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/card";
 import { Separator } from "@shared/components/separator";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { UtmBuilder } from "@shared/components/utm-builder";
+import { UtmParameters, utmParametersToTags, validateUtmValue } from "@shared/utils/tags";
 
 interface UrlFormProps {
     availableTags: string[];
@@ -23,6 +25,7 @@ interface UrlFormProps {
         maxVisits?: number;
         crawlable?: boolean;
         forwardQuery?: boolean;
+        utmParams?: UtmParameters;
     };
     action: (formData: FormData) => Promise<void>;
     onDelete?: () => Promise<void>;
@@ -34,11 +37,31 @@ export function UrlForm({ availableTags, initialData, action, onDelete, submitLa
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(!!initialData);
+    const [showUtmBuilder, setShowUtmBuilder] = useState(
+        !!initialData?.utmParams && Object.values(initialData.utmParams).some(v => v)
+    );
+    const [utmParams, setUtmParams] = useState<UtmParameters>(initialData?.utmParams || {});
+    const [longUrl, setLongUrl] = useState(initialData?.longUrl || '');
+
+    const hasUtmErrors = Object.values(utmParams).some(value => {
+        if (!value) return false;
+        return !validateUtmValue(value).valid;
+    });
 
     const handleSubmit = async (formData: FormData) => {
+        if (hasUtmErrors) {
+            // Prevent submission when UTM parameters are invalid.
+            // UTM fields should already display inline validation errors.
+            return;
+        }
+
         setIsSubmitting(true);
         // Append tags to formData
         selectedTags.forEach(tag => formData.append("tags", tag));
+        
+        // Append UTM parameters as separate form fields
+        const utmTags = utmParametersToTags(utmParams);
+        utmTags.forEach(tag => formData.append("utmTags", tag));
 
         try {
             await action(formData);
@@ -82,7 +105,8 @@ export function UrlForm({ availableTags, initialData, action, onDelete, submitLa
                             required
                             className="mt-1"
                             placeholder="https://example.com/very/long/url"
-                            defaultValue={initialData?.longUrl}
+                            value={longUrl}
+                            onChange={(e) => setLongUrl(e.target.value)}
                         />
                     </div>
 
@@ -99,6 +123,35 @@ export function UrlForm({ availableTags, initialData, action, onDelete, submitLa
                     </div>
                 </CardContent>
             </Card>
+
+            <div className="flex justify-center">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowUtmBuilder(!showUtmBuilder)}
+                    className="text-muted-foreground"
+                >
+                    {showUtmBuilder ? (
+                        <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Hide UTM parameters
+                        </>
+                    ) : (
+                        <>
+                            <ChevronDown className="mr-2 h-4 w-4" />
+                            Add UTM parameters
+                        </>
+                    )}
+                </Button>
+            </div>
+
+            {showUtmBuilder && (
+                <UtmBuilder
+                    longUrl={longUrl}
+                    utmParams={utmParams}
+                    onUtmParamsChange={setUtmParams}
+                />
+            )}
 
             <div className="flex justify-center">
                 <Button

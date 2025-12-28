@@ -2,7 +2,7 @@ import { shlink } from "@shared/utils/shlink";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@app/auth";
-import { formatTag, getDisplayTags, TAG_PREFIXES } from "@shared/utils/tags";
+import { formatTag, getDisplayTags, TAG_PREFIXES, extractUtmParameters, buildUrlWithUtmParams, extractUtmFromUrl, getBaseUrl, parseUtmTagsFromFormData } from "@shared/utils/tags";
 import { UrlForm } from "@features/urls/url-form";
 
 interface EditUrlPageProps {
@@ -21,6 +21,7 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         "use server";
         const longUrl = formData.get("longUrl") as string;
         const tags = formData.getAll("tags") as string[];
+        const utmTags = formData.getAll("utmTags") as string[];
 
         // Extract optional fields
         const title = formData.get("title") as string;
@@ -35,13 +36,20 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         const session = await auth();
         const userId = session?.user?.email || session?.user?.name || "unknown";
 
+        // Build UTM parameters from tags for URL modification
+        const utmParams = parseUtmTagsFromFormData(utmTags);
+
+        // Build the final URL with UTM parameters appended
+        const finalLongUrl = buildUrlWithUtmParams(longUrl, utmParams);
+
         const formattedTags = [
             ...tags.map(t => formatTag(TAG_PREFIXES.CUSTOM, t)),
+            ...utmTags, // UTM tags are already formatted
             formatTag(TAG_PREFIXES.CREATED_BY, userId)
         ];
 
         await shlink.updateShortUrl(shortCode, {
-            longUrl,
+            longUrl: finalLongUrl,
             tags: formattedTags,
             title: title || undefined,
             validSince: validSince || null,
@@ -62,18 +70,46 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         redirect("/urls");
     }
 
+    // Extract UTM parameters from both tags and URL
+    const utmFromTags = extractUtmParameters(shortUrlData.tags);
+    const utmFromUrl = extractUtmFromUrl(shortUrlData.longUrl);
+    
+    // If the same UTM key exists in both sources with different values, the tag value wins.
+    // Log a warning so this precedence behavior is visible during development and debugging.
+    const conflictingUtmKeys = Object.keys(utmFromUrl).filter((key) => {
+        const urlValue = utmFromUrl[key as keyof typeof utmFromUrl];
+        const tagValue = utmFromTags[key as keyof typeof utmFromTags];
+        return typeof tagValue !== "undefined" && urlValue !== tagValue;
+    });
+
+    if (conflictingUtmKeys.length > 0) {
+        // Only log parameter names to avoid exposing sensitive values
+        console.warn(
+            "[EditUrlPage] Conflicting UTM parameters detected between URL and tags. " +
+            "Tag values will take precedence for keys:",
+            conflictingUtmKeys
+        );
+    }
+
+    // Merge UTM params, with tag-derived values overriding URL query values on key conflicts.
+    const utmParams = { ...utmFromUrl, ...utmFromTags };
+    
+    // Get base URL without UTM parameters for editing
+    const baseUrl = getBaseUrl(shortUrlData.longUrl);
+
     // Prepare initial data
     const initialData = {
-        longUrl: shortUrlData.longUrl,
+        longUrl: baseUrl,
         tags: getDisplayTags(shortUrlData.tags),
-        title: (shortUrlData as any).title, // Assuming title is in the response, though interface might need update
-        customSlug: shortUrlData.shortCode, // Display shortCode as customSlug but disabled
-        shortCodeLength: undefined, // Not editable
-        validSince: (shortUrlData as any).meta?.validSince?.split("+")[0], // Format for datetime-local
+        title: (shortUrlData as any).title,
+        customSlug: shortUrlData.shortCode,
+        shortCodeLength: undefined,
+        validSince: (shortUrlData as any).meta?.validSince?.split("+")[0],
         validUntil: (shortUrlData as any).meta?.validUntil?.split("+")[0],
         maxVisits: (shortUrlData as any).meta?.maxVisits,
         crawlable: (shortUrlData as any).crawlable,
         forwardQuery: (shortUrlData as any).forwardQuery,
+        utmParams,
     };
 
     return (

@@ -38,13 +38,13 @@ export interface UtmParameters {
 }
 
 // Shared constant for UTM parameter keys to ensure consistency
-const UTM_PARAMETER_KEYS: (keyof UtmParameters)[] = [
+const UTM_PARAMETER_KEYS = [
     'utm_source',
     'utm_medium',
     'utm_campaign',
     'utm_term',
     'utm_content'
-] as const;
+] as const satisfies readonly (keyof UtmParameters)[];
 
 export function parseTag(tag: string): ParsedTag {
     const parts = tag.split(':');
@@ -187,8 +187,8 @@ export function parseUtmTagsFromFormData(utmTags: string[]): UtmParameters {
     utmTags.forEach(tag => {
         const [prefix, ...valueParts] = tag.split(':');
         const value = valueParts.join(':');
-        // Validate prefix is a known UTM parameter key before assignment
-        if (prefix && value && UTM_PARAMETER_KEYS.includes(prefix as keyof UtmParameters)) {
+        // Type-safe check: validate prefix is a known UTM parameter key before assignment
+        if (prefix && value && prefix in UTM_PARAM_TO_PREFIX) {
             utmParams[prefix as keyof UtmParameters] = value;
         }
     });

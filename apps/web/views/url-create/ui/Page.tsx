@@ -2,7 +2,7 @@ import { shlink } from "@shared/utils/shlink";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@app/auth";
-import { formatTag, getDisplayTags, TAG_PREFIXES, buildUrlWithUtmParams, UtmParameters } from "@shared/utils/tags";
+import { formatTag, getDisplayTags, TAG_PREFIXES, buildUrlWithUtmParams, parseUtmTagsFromFormData } from "@shared/utils/tags";
 import { UrlForm } from "@features/urls/url-form";
 
 export default async function CreateUrlPage() {
@@ -32,14 +32,7 @@ export default async function CreateUrlPage() {
         const userId = session?.user?.email || session?.user?.name || "unknown";
 
         // Build UTM parameters from tags for URL modification
-        const utmParams: UtmParameters = {};
-        utmTags.forEach(tag => {
-            const [prefix, ...valueParts] = tag.split(':');
-            const value = valueParts.join(':');
-            if (prefix && value) {
-                utmParams[prefix as keyof UtmParameters] = value;
-            }
-        });
+        const utmParams = parseUtmTagsFromFormData(utmTags);
 
         // Build the final URL with UTM parameters appended
         const finalLongUrl = buildUrlWithUtmParams(longUrl, utmParams);

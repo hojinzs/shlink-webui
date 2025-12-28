@@ -54,15 +54,10 @@ export function formatTag(prefix: TagPrefix, value: string): string {
 export function getDisplayTags(tags: string[]): string[] {
     return tags
         .map(parseTag)
-        .filter(t => t.prefix === TAG_PREFIXES.CUSTOM || UTM_PREFIXES.includes(t.prefix as UtmPrefix))
-        .map(t => {
-            // For custom tags, show only the value
-            if (t.prefix === TAG_PREFIXES.CUSTOM) {
-                return t.value;
-            }
-            // For UTM tags, show the full tag (prefix:value)
-            return t.original;
-        });
+        // Only display custom tags in the UI per tag management policy
+        .filter(t => t.prefix === TAG_PREFIXES.CUSTOM)
+        // For custom tags, show only the value (without prefix)
+        .map(t => t.value);
 }
 
 export function isCustomTag(tag: string): boolean {
@@ -86,45 +81,107 @@ export function extractUtmParameters(tags: string[]): UtmParameters {
     return utmParams;
 }
 
+// Type-safe mapping between UtmParameters keys and their corresponding tag prefixes
+const UTM_PARAM_TO_PREFIX: Record<keyof UtmParameters, UtmPrefix> = {
+    utm_source: TAG_PREFIXES.UTM_SOURCE,
+    utm_medium: TAG_PREFIXES.UTM_MEDIUM,
+    utm_campaign: TAG_PREFIXES.UTM_CAMPAIGN,
+    utm_term: TAG_PREFIXES.UTM_TERM,
+    utm_content: TAG_PREFIXES.UTM_CONTENT,
+};
+
 export function utmParametersToTags(utmParams: UtmParameters): string[] {
     const tags: string[] = [];
-    Object.entries(utmParams).forEach(([key, value]) => {
+    (Object.entries(utmParams) as [keyof UtmParameters, string | undefined][]).forEach(([key, value]) => {
         if (value && value.trim()) {
-            tags.push(formatTag(key as TagPrefix, value.trim()));
+            const prefix = UTM_PARAM_TO_PREFIX[key];
+            tags.push(formatTag(prefix, value.trim()));
         }
     });
     return tags;
 }
 
-// Validate UTM parameter value - only alphanumeric, hyphens, underscores allowed
+// Validate UTM parameter value - only alphanumeric, hyphens, underscores, periods, and plus signs allowed
 export function validateUtmValue(value: string): { valid: boolean; error?: string } {
     if (!value || value.trim() === '') {
         return { valid: true }; // Empty is valid (optional)
     }
     const trimmed = value.trim();
-    // Allow alphanumeric, hyphens, underscores, and periods
-    const validPattern = /^[a-zA-Z0-9_\-\.]+$/;
+    // Allow alphanumeric, hyphens, underscores, periods, and plus signs
+    const validPattern = /^[a-zA-Z0-9_\-\.+]+$/;
     if (!validPattern.test(trimmed)) {
         return { 
             valid: false, 
-            error: 'Only letters, numbers, hyphens, underscores, and periods are allowed' 
+            error: 'Only letters, numbers, hyphens, underscores, periods, and plus signs are allowed' 
         };
     }
     return { valid: true };
 }
 
+// Build a URL with UTM parameters appended as query string
+// Preserves existing non-UTM query parameters in the base URL
 export function buildUrlWithUtmParams(baseUrl: string, utmParams: UtmParameters): string {
     if (!baseUrl) return '';
     
     try {
         const url = new URL(baseUrl);
         Object.entries(utmParams).forEach(([key, value]) => {
-            if (value && value.trim()) {
-                url.searchParams.set(key, value.trim());
+            const trimmedValue = value?.trim();
+            if (trimmedValue) {
+                url.searchParams.set(key, trimmedValue);
             }
         });
         return url.toString();
-    } catch {
+    } catch (error) {
+        // Log the error instead of failing silently, but preserve existing fallback behavior
+        // eslint-disable-next-line no-console
+        console.error('buildUrlWithUtmParams: invalid baseUrl provided', { baseUrl, error });
         return baseUrl;
     }
+}
+
+// Extract UTM parameters from a URL's query string
+export function extractUtmFromUrl(url: string): UtmParameters {
+    try {
+        const urlObj = new URL(url);
+        const utmParams: UtmParameters = {};
+        const utmKeys: (keyof UtmParameters)[] = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+        utmKeys.forEach(key => {
+            const value = urlObj.searchParams.get(key);
+            if (value) {
+                utmParams[key] = value;
+            }
+        });
+        return utmParams;
+    } catch {
+        return {};
+    }
+}
+
+// Remove UTM parameters from a URL and return the base URL
+export function getBaseUrl(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+        utmKeys.forEach(key => urlObj.searchParams.delete(key));
+        
+        // Remove trailing "?" if no query parameters remain
+        const urlString = urlObj.toString();
+        return urlString.endsWith('?') ? urlString.slice(0, -1) : urlString;
+    } catch {
+        return url;
+    }
+}
+
+// Parse UTM tags from FormData (used in URL creation/editing)
+export function parseUtmTagsFromFormData(utmTags: string[]): UtmParameters {
+    const utmParams: UtmParameters = {};
+    utmTags.forEach(tag => {
+        const [prefix, ...valueParts] = tag.split(':');
+        const value = valueParts.join(':');
+        if (prefix && value) {
+            utmParams[prefix as keyof UtmParameters] = value;
+        }
+    });
+    return utmParams;
 }

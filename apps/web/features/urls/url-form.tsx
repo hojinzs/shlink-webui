@@ -50,7 +50,8 @@ export function UrlForm({ availableTags, initialData, action, onDelete, submitLa
 
     const handleSubmit = async (formData: FormData) => {
         if (hasUtmErrors) {
-            alert("Please fix UTM parameter validation errors before submitting.");
+            // Prevent submission when UTM parameters are invalid.
+            // UTM fields should already display inline validation errors.
             return;
         }
 

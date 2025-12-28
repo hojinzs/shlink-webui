@@ -31,7 +31,7 @@ const UTM_FIELDS: UtmFieldConfig[] = [
         key: "utm_source",
         label: "Campaign Source",
         placeholder: "e.g., google, newsletter, facebook",
-        description: "Identifies which site sent the traffic (required for tracking)"
+        description: "Identifies which site sent the traffic"
     },
     {
         key: "utm_medium",
@@ -48,7 +48,7 @@ const UTM_FIELDS: UtmFieldConfig[] = [
     {
         key: "utm_term",
         label: "Campaign Term",
-        placeholder: "e.g., running+shoes",
+        placeholder: "e.g., running+shoes, red+sneakers",
         description: "Identifies search terms (optional)"
     },
     {
@@ -106,7 +106,6 @@ export function UtmBuilder({ longUrl, utmParams, onUtmParamsChange }: UtmBuilder
                         <Input
                             type="text"
                             id={field.key}
-                            name={field.key}
                             className={`mt-1 ${errors[field.key] ? 'border-red-500' : ''}`}
                             placeholder={field.placeholder}
                             value={utmParams[field.key] || ''}

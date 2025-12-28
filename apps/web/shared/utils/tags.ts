@@ -92,7 +92,10 @@ const UTM_PARAM_TO_PREFIX: Record<keyof UtmParameters, UtmPrefix> = {
 
 export function utmParametersToTags(utmParams: UtmParameters): string[] {
     const tags: string[] = [];
-    (Object.entries(utmParams) as [keyof UtmParameters, string | undefined][]).forEach(([key, value]) => {
+    // Iterate over known UTM parameter keys for type safety
+    const utmKeys: (keyof UtmParameters)[] = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+    utmKeys.forEach(key => {
+        const value = utmParams[key];
         if (value && value.trim()) {
             const prefix = UTM_PARAM_TO_PREFIX[key];
             tags.push(formatTag(prefix, value.trim()));
@@ -164,10 +167,7 @@ export function getBaseUrl(url: string): string {
         const urlObj = new URL(url);
         const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
         utmKeys.forEach(key => urlObj.searchParams.delete(key));
-        
-        // Remove trailing "?" if no query parameters remain
-        const urlString = urlObj.toString();
-        return urlString.endsWith('?') ? urlString.slice(0, -1) : urlString;
+        return urlObj.toString();
     } catch {
         return url;
     }
@@ -176,10 +176,13 @@ export function getBaseUrl(url: string): string {
 // Parse UTM tags from FormData (used in URL creation/editing)
 export function parseUtmTagsFromFormData(utmTags: string[]): UtmParameters {
     const utmParams: UtmParameters = {};
+    const validUtmKeys: (keyof UtmParameters)[] = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+    
     utmTags.forEach(tag => {
         const [prefix, ...valueParts] = tag.split(':');
         const value = valueParts.join(':');
-        if (prefix && value) {
+        // Validate prefix is a known UTM parameter key before assignment
+        if (prefix && value && validUtmKeys.includes(prefix as keyof UtmParameters)) {
             utmParams[prefix as keyof UtmParameters] = value;
         }
     });

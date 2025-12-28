@@ -2,41 +2,11 @@ import { shlink } from "@shared/utils/shlink";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@app/auth";
-import { formatTag, getDisplayTags, TAG_PREFIXES, extractUtmParameters, buildUrlWithUtmParams, UtmParameters } from "@shared/utils/tags";
+import { formatTag, getDisplayTags, TAG_PREFIXES, extractUtmParameters, buildUrlWithUtmParams, extractUtmFromUrl, getBaseUrl, parseUtmTagsFromFormData } from "@shared/utils/tags";
 import { UrlForm } from "@features/urls/url-form";
 
 interface EditUrlPageProps {
     shortCode: string;
-}
-
-// Helper to extract base URL without UTM parameters
-function getBaseUrl(url: string): string {
-    try {
-        const urlObj = new URL(url);
-        const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-        utmKeys.forEach(key => urlObj.searchParams.delete(key));
-        return urlObj.toString();
-    } catch {
-        return url;
-    }
-}
-
-// Helper to extract UTM parameters from URL
-function extractUtmFromUrl(url: string): UtmParameters {
-    try {
-        const urlObj = new URL(url);
-        const utmParams: UtmParameters = {};
-        const utmKeys: (keyof UtmParameters)[] = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-        utmKeys.forEach(key => {
-            const value = urlObj.searchParams.get(key);
-            if (value) {
-                utmParams[key] = value;
-            }
-        });
-        return utmParams;
-    } catch {
-        return {};
-    }
 }
 
 export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
@@ -67,14 +37,7 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
         const userId = session?.user?.email || session?.user?.name || "unknown";
 
         // Build UTM parameters from tags for URL modification
-        const utmParams: UtmParameters = {};
-        utmTags.forEach(tag => {
-            const [prefix, ...valueParts] = tag.split(':');
-            const value = valueParts.join(':');
-            if (prefix && value) {
-                utmParams[prefix as keyof UtmParameters] = value;
-            }
-        });
+        const utmParams = parseUtmTagsFromFormData(utmTags);
 
         // Build the final URL with UTM parameters appended
         const finalLongUrl = buildUrlWithUtmParams(longUrl, utmParams);
@@ -110,7 +73,25 @@ export default async function EditUrlPage({ shortCode }: EditUrlPageProps) {
     // Extract UTM parameters from both tags and URL
     const utmFromTags = extractUtmParameters(shortUrlData.tags);
     const utmFromUrl = extractUtmFromUrl(shortUrlData.longUrl);
-    // Merge UTM params, preferring tags over URL params
+    
+    // If the same UTM key exists in both sources with different values, the tag value wins.
+    // Log a warning so this precedence behavior is visible during development and debugging.
+    const conflictingUtmKeys = Object.keys(utmFromUrl).filter((key) => {
+        const urlValue = utmFromUrl[key as keyof typeof utmFromUrl];
+        const tagValue = utmFromTags[key as keyof typeof utmFromTags];
+        return typeof tagValue !== "undefined" && urlValue !== tagValue;
+    });
+
+    if (conflictingUtmKeys.length > 0) {
+        // Only log parameter names to avoid exposing sensitive values
+        console.warn(
+            "[EditUrlPage] Conflicting UTM parameters detected between URL and tags. " +
+            "Tag values will take precedence for keys:",
+            conflictingUtmKeys
+        );
+    }
+
+    // Merge UTM params, with tag-derived values overriding URL query values on key conflicts.
     const utmParams = { ...utmFromUrl, ...utmFromTags };
     
     // Get base URL without UTM parameters for editing

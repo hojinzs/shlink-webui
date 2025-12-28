@@ -17,7 +17,7 @@ The builder supports all standard UTM parameters:
 | `utm_source` | Identifies which site sent the traffic | google, newsletter, facebook |
 | `utm_medium` | Identifies what type of link was used | cpc, banner, email |
 | `utm_campaign` | Identifies a specific product promotion or campaign | summer-sale, product-launch |
-| `utm_term` | Identifies search terms (optional) | running+shoes |
+| `utm_term` | Identifies search terms (optional) | running+shoes, red+sneakers |
 | `utm_content` | Identifies what specifically was clicked (optional) | logolink, textlink |
 
 ### Key Functionality
@@ -81,8 +81,8 @@ When a short URL is created or updated:
 ### Validation Rules
 
 UTM parameter values must:
-- Contain only letters (a-z, A-Z), numbers (0-9), hyphens (-), underscores (_), and periods (.)
-- Not contain spaces or special characters
+- Contain only letters (a-z, A-Z), numbers (0-9), hyphens (-), underscores (_), periods (.), and plus signs (+)
+- Not contain spaces or other special characters
 - Be URL-safe
 
 ## Best Practices
